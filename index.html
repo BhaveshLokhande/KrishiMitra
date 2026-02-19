@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agri Knowledge Base - Pune Region</title>
+
+<style>
+:root{
+  --primary:#2e7d32;
+  --secondary:#f4f4f4;
+  --accent:#1976d2;
+  --danger:#c62828;
+  --warning:#f9a825;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial, sans-serif;}
+
+body{background:#fafafa;color:#333;}
+
+header{
+  background:var(--primary);
+  color:white;
+  padding:1rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+}
+
+header h1{font-size:1.2rem;}
+
+header input{
+  padding:0.5rem;
+  border:none;
+  border-radius:4px;
+}
+
+.container{
+  display:flex;
+  flex-direction:column;
+}
+
+.sidebar{
+  background:white;
+  padding:1rem;
+  border-bottom:1px solid #ddd;
+}
+
+.sidebar h3{margin-bottom:0.5rem;}
+
+.sidebar button{
+  width:100%;
+  padding:0.5rem;
+  margin-bottom:0.5rem;
+  border:none;
+  background:var(--secondary);
+  cursor:pointer;
+  border-radius:4px;
+}
+
+.sidebar button:hover{background:#e0e0e0;}
+
+.main{
+  padding:1rem;
+}
+
+.snapshot{
+  background:white;
+  padding:1rem;
+  border-radius:6px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.05);
+  margin-bottom:1rem;
+}
+
+.tabs{
+  display:flex;
+  overflow-x:auto;
+  gap:0.5rem;
+  margin-bottom:1rem;
+}
+
+.tabs button{
+  padding:0.5rem 1rem;
+  border:none;
+  background:#ddd;
+  border-radius:20px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.tabs button.active{
+  background:var(--primary);
+  color:white;
+}
+
+.tab-content{
+  background:white;
+  padding:1rem;
+  border-radius:6px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.05);
+}
+
+.card{
+  margin-bottom:1rem;
+}
+
+.card h4{
+  margin-bottom:0.5rem;
+  color:var(--primary);
+}
+
+ul{padding-left:1rem;margin-top:0.5rem;}
+
+footer{
+  text-align:center;
+  padding:1rem;
+  font-size:0.8rem;
+  color:#777;
+}
+
+/* Desktop */
+@media(min-width:768px){
+  .container{
+    flex-direction:row;
+  }
+  .sidebar{
+    width:250px;
+    border-right:1px solid #ddd;
+    border-bottom:none;
+  }
+  .main{
+    flex:1;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Agri Knowledge Base – Pune Region</h1>
+  <input type="text" id="searchBox" placeholder="Search crop...">
+</header>
+
+<div class="container">
+
+  <div class="sidebar">
+    <h3>Crops</h3>
+    <div id="cropList"></div>
+  </div>
+
+  <div class="main">
+    <div id="snapshot" class="snapshot"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="tab-content" id="tabContent"></div>
+  </div>
+
+</div>
+
+<footer>
+  Designed for Pune Region Farmers | Phase 1 Prototype
+</footer>
+
+<script>
+
+/* ==========================
+   Crop Data (Scalable JSON)
+========================== */
+
+const crops = [
+{
+  id:"onion",
+  name:"Onion",
+  localName:"Kanda",
+  scientific:"Allium cepa",
+  category:"Vegetable",
+  duration:"110–130 days",
+  season:"Kharif & Rabi",
+  water:"Moderate",
+  soil:"Loamy, Well-drained",
+  yield:"250–350 q/ha",
+
+  overview:{
+    type:"Biennial grown as annual",
+    ediblePart:"Bulb",
+    rootSystem:"Fibrous"
+  },
+
+  soilClimate:{
+    soilPH:"6.0 – 7.5",
+    rainfall:"500–750 mm",
+    temperature:"13–25°C optimal",
+    drainage:"Excellent drainage required"
+  },
+
+  waterManagement:{
+    totalWater:"350–550 mm",
+    criticalStages:["Bulb initiation","Bulb enlargement"],
+    irrigationInterval:"5–10 days depending on stage",
+    caution:"Avoid waterlogging"
+  },
+
+  nutrients:{
+    NPK:"100:50:50 kg/ha",
+    organic:"FYM 20–25 tons/ha",
+    sulphur:"20–25 kg/ha improves bulb quality",
+    schedule:"Split nitrogen application"
+  },
+
+  pestsDiseases:{
+    pests:["Thrips – Silver streaks on leaves"],
+    diseases:["Purple Blotch – Purple lesions on leaves"],
+    prevention:"Proper spacing & field sanitation"
+  },
+
+  calendar:[
+    "June–July: Nursery sowing (Kharif)",
+    "July–Aug: Transplanting",
+    "Aug–Sept: Top dressing & weeding",
+    "Oct–Nov: Harvest (Kharif)",
+    "Dec–Jan: Rabi transplanting",
+    "March–April: Rabi harvest"
+  ],
+
+  varieties:[
+    "N-53 (Kharif)",
+    "Baswant-780 (Rabi)",
+    "Agrifound Light Red"
+  ],
+
+  economics:{
+    cost:"Approx ₹1.2–1.5 lakh/ha",
+    storage:"4–6 months (Rabi)",
+    marketPeak:"May–June"
+  },
+
+  postHarvest:{
+    curing:"7–10 days shade curing",
+    storageTemp:"25–30°C",
+    humidity:"65–70%"
+  },
+
+  doDont:{
+    do:["Use certified seed","Ensure proper drainage","Follow split nitrogen application"],
+    dont:["Avoid over irrigation","Avoid continuous onion cropping","Avoid excess nitrogen late stage"]
+  }
+
+}
+];
+
+
+/* ==========================
+   Dynamic Rendering Logic
+========================== */
+
+const cropList = document.getElementById("cropList");
+const snapshot = document.getElementById("snapshot");
+const tabs = document.getElementById("tabs");
+const tabContent = document.getElementById("tabContent");
+
+function loadCrop(crop){
+
+  snapshot.innerHTML = `
+    <h2>${crop.name} (${crop.localName})</h2>
+    <p><strong>Scientific:</strong> ${crop.scientific}</p>
+    <p><strong>Season:</strong> ${crop.season}</p>
+    <p><strong>Duration:</strong> ${crop.duration}</p>
+    <p><strong>Soil:</strong> ${crop.soil}</p>
+    <p><strong>Water Need:</strong> ${crop.water}</p>
+    <p><strong>Yield:</strong> ${crop.yield}</p>
+  `;
+
+  const sections = {
+    Overview:`
+      <div class="card">
+        <p><strong>Type:</strong> ${crop.overview.type}</p>
+        <p><strong>Edible Part:</strong> ${crop.overview.ediblePart}</p>
+        <p><strong>Root System:</strong> ${crop.overview.rootSystem}</p>
+      </div>
+    `,
+    "Soil & Climate":`
+      <div class="card">
+        <p><strong>pH:</strong> ${crop.soilClimate.soilPH}</p>
+        <p><strong>Rainfall:</strong> ${crop.soilClimate.rainfall}</p>
+        <p><strong>Temperature:</strong> ${crop.soilClimate.temperature}</p>
+        <p><strong>Drainage:</strong> ${crop.soilClimate.drainage}</p>
+      </div>
+    `,
+    Water:`
+      <div class="card">
+        <p><strong>Total Water:</strong> ${crop.waterManagement.totalWater}</p>
+        <p><strong>Irrigation Interval:</strong> ${crop.waterManagement.irrigationInterval}</p>
+        <p><strong>Critical Stages:</strong></p>
+        <ul>${crop.waterManagement.criticalStages.map(s=>`<li>${s}</li>`).join("")}</ul>
+        <p><strong>Caution:</strong> ${crop.waterManagement.caution}</p>
+      </div>
+    `,
+    Nutrients:`
+      <div class="card">
+        <p><strong>NPK:</strong> ${crop.nutrients.NPK}</p>
+        <p><strong>Organic:</strong> ${crop.nutrients.organic}</p>
+        <p><strong>Sulphur:</strong> ${crop.nutrients.sulphur}</p>
+        <p><strong>Schedule:</strong> ${crop.nutrients.schedule}</p>
+      </div>
+    `,
+    "Pests & Diseases":`
+      <div class="card">
+        <p><strong>Pests:</strong></p>
+        <ul>${crop.pestsDiseases.pests.map(p=>`<li>${p}</li>`).join("")}</ul>
+        <p><strong>Diseases:</strong></p>
+        <ul>${crop.pestsDiseases.diseases.map(d=>`<li>${d}</li>`).join("")}</ul>
+        <p><strong>Prevention:</strong> ${crop.pestsDiseases.prevention}</p>
+      </div>
+    `,
+    Calendar:`
+      <ul>${crop.calendar.map(c=>`<li>${c}</li>`).join("")}</ul>
+    `,
+    Varieties:`
+      <ul>${crop.varieties.map(v=>`<li>${v}</li>`).join("")}</ul>
+    `,
+    Economics:`
+      <p><strong>Cost:</strong> ${crop.economics.cost}</p>
+      <p><strong>Storage:</strong> ${crop.economics.storage}</p>
+      <p><strong>Market Peak:</strong> ${crop.economics.marketPeak}</p>
+    `,
+    "Post Harvest":`
+      <p><strong>Curing:</strong> ${crop.postHarvest.curing}</p>
+      <p><strong>Storage Temp:</strong> ${crop.postHarvest.storageTemp}</p>
+      <p><strong>Humidity:</strong> ${crop.postHarvest.humidity}</p>
+    `,
+    "Do & Don't":`
+      <div style="display:flex;gap:2rem;">
+        <div>
+          <h4 style="color:green;">Do</h4>
+          <ul>${crop.doDont.do.map(d=>`<li>${d}</li>`).join("")}</ul>
+        </div>
+        <div>
+          <h4 style="color:red;">Don't</h4>
+          <ul>${crop.doDont.dont.map(d=>`<li>${d}</li>`).join("")}</ul>
+        </div>
+      </div>
+    `
+  };
+
+  tabs.innerHTML="";
+  tabContent.innerHTML="";
+
+  Object.keys(sections).forEach((key,index)=>{
+    const btn=document.createElement("button");
+    btn.innerText=key;
+    if(index===0){btn.classList.add("active");tabContent.innerHTML=sections[key];}
+    btn.onclick=()=>{
+      document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      tabContent.innerHTML=sections[key];
+    };
+    tabs.appendChild(btn);
+  });
+}
+
+
+/* ==========================
+   Initialize
+========================== */
+
+crops.forEach(c=>{
+  const btn=document.createElement("button");
+  btn.innerText=c.name;
+  btn.onclick=()=>loadCrop(c);
+  cropList.appendChild(btn);
+});
+
+loadCrop(crops[0]);
+
+/* Search */
+document.getElementById("searchBox").addEventListener("input",function(){
+  const val=this.value.toLowerCase();
+  cropList.innerHTML="";
+  crops.filter(c=>c.name.toLowerCase().includes(val))
+       .forEach(c=>{
+          const btn=document.createElement("button");
+          btn.innerText=c.name;
+          btn.onclick=()=>loadCrop(c);
+          cropList.appendChild(btn);
+       });
+});
+
+</script>
+
+</body>
+</html>
